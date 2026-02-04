@@ -1,0 +1,11 @@
+replicaCount: 1
+
+image:
+  repository: python  # We use the official python image as a placeholder for now
+  pullPolicy: IfNotPresent
+  # Overridden by Jenkins later
+  tag: "3.9-slim"
+
+service:
+  type: ClusterIP
+  port: 80
