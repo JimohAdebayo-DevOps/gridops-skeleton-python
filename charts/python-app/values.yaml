@@ -1,10 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: python  # We use the official python image as a placeholder for now
+  repository: nginx     # Changed from 'python'
   pullPolicy: IfNotPresent
-  # Overridden by Jenkins later
-  tag: "3.9-slim"
+  tag: "latest
 
 service:
   type: ClusterIP
