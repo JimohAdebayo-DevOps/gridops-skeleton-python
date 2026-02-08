@@ -1,10 +1,11 @@
 replicaCount: 1
 
 image:
-  repository: nginx     # Changed from 'python'
+  repository: jimoh1990/payment-service
   pullPolicy: IfNotPresent
-  tag: "latest
+  tag: "v10"
 
 service:
-  type: ClusterIP
+  type: NodePort       # Change from ClusterIP to NodePort
   port: 80
+  nodePort: 30007
