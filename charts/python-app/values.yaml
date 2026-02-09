@@ -8,4 +8,3 @@ image:
 service:
   type: NodePort       # Change from ClusterIP to NodePort
   port: 80
-  nodePort: 30007
