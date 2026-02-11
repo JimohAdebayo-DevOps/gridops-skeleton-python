@@ -1,7 +1,8 @@
 pipeline {
     agent {
         kubernetes {
-            yaml '''
+            // Ephemeral Agent with Kaniko for building images
+            yaml """
             apiVersion: v1
             kind: Pod
             spec:
@@ -12,20 +13,24 @@ pipeline {
                 - /busybox/cat
                 tty: true
                 volumeMounts:
-                  - name: kaniko-secret
+                  - name: docker-config
                     mountPath: /kaniko/.docker
               volumes:
-                - name: kaniko-secret
-                  emptyDir: {}
-            '''
+                - name: docker-config
+                  secret:
+                    secretName: dockerhub-creds-kaniko
+                    items:
+                      - key: .dockerconfigjson
+                        path: config.json
+            """
         }
     }
 
     environment {
-        // Define the image name
-        DOCKER_IMAGE = "jimoh1990/${JOB_BASE_NAME}" 
-        // Use the Build Number as the unique tag
-        IMAGE_TAG = "v${BUILD_NUMBER}"
+        DOCKER_USER = "jimoh1990"
+        // Extracts 'inventory-api-source' from 'GridOps-Platform/inventory-api-source/main'
+        REPO_NAME = "${env.JOB_NAME.split('/')[1]}" 
+        IMAGE_TAG = "v${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -35,44 +40,41 @@ pipeline {
             }
         }
 
-        stage('Build and Push (Kaniko)') {
+        stage('Build and Push') {
             steps {
-                // Source [1]: Use ephemeral agents (Kaniko) for secure builds
                 container('kaniko') {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                        script {
-                            // 1. Create the Docker Config file dynamically using your credentials
-                            sh """
-                                echo "{\\"auths\\":{\\"https://index.docker.io/v1/\\":{\\"auth\\":\\"\$(echo -n ${DOCKER_USER}:${DOCKER_PASS} | base64)\\"}}}" > /kaniko/.docker/config.json
-                            """
-                            
-                            // 2. Run the Kaniko Executor (Replaces 'docker build' and 'docker push')
-                            sh """
-                                /kaniko/executor --context `pwd` --destination ${DOCKER_IMAGE}:${IMAGE_TAG}
-                            """
-                        }
+                    script {
+                        echo "🚀 Building Image: ${DOCKER_USER}/${REPO_NAME}:${IMAGE_TAG}"
+                        
+                        // Build and Push to Docker Hub
+                        sh "/kaniko/executor --context `pwd` --destination ${DOCKER_USER}/${REPO_NAME}:${IMAGE_TAG}"
                     }
                 }
             }
         }
 
         stage('GitOps Update') {
-            // Source [2]: Write-Back loop to update Git
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-pat', passwordVariable: 'GIT_TOKEN', usernameVariable: 'GIT_USER')]) {
                     script {
                         sh """
-                            # Configure Git
-                            git config user.email "jenkins@sikiru.co.uk"
-                            git config user.name "Jenkins CI"
+                            echo "📝 Updating Helm Values..."
                             
-                            # Update the tag in values.yaml
+                            # Git Configuration
+                            git config user.email "jenkins@sikiru.co.uk"
+                            git config user.name "Jenkins Bot"
+                            
+                            # --- THE FIX IS HERE ---
+                            # 1. Update the Repository Name (e.g., jimoh1990/payment-service -> jimoh1990/inventory-api-source)
+                            sed -i 's|repository: .*|repository: ${DOCKER_USER}/${REPO_NAME}|' charts/python-app/values.yaml
+                            
+                            # 2. Update the Image Tag (e.g., v1 -> v5)
                             sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' charts/python-app/values.yaml
                             
-                            # Commit and Push
+                            # 3. Commit and Push Back
                             git add charts/python-app/values.yaml
-                            git commit -m "ci: update image tag to ${IMAGE_TAG}"
-                            git push https://${GIT_USER}:${GIT_TOKEN}@github.com/JimohAdebayo-DevOps/${JOB_BASE_NAME}-source.git HEAD:main
+                            git commit -m "ci: update image to ${REPO_NAME}:${IMAGE_TAG} [skip ci]"
+                            git push https://${GIT_USER}:${GIT_TOKEN}@github.com/JimohAdebayo-DevOps/${REPO_NAME}.git HEAD:main
                         """
                     }
                 }
@@ -80,3 +82,4 @@ pipeline {
         }
     }
 }
+
