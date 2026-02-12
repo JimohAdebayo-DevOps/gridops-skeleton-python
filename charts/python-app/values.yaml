@@ -1,9 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: jimoh1990/payment-service
+  repository: jimoh1990/gridops-skeleton-python
   pullPolicy: IfNotPresent
-  tag: "v10"
+  tag: "v2"
 
 service:
   type: NodePort       # Change from ClusterIP to NodePort
