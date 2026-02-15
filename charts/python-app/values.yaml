@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: jimoh1990/gridops-skeleton-python
   pullPolicy: IfNotPresent
-  tag: "v4"
+  tag: "v5"
 
 service:
   type: NodePort       # Change from ClusterIP to NodePort
