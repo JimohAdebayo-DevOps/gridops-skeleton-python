@@ -21,4 +21,16 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
-          # In the future, Liveness Probes will be added here
+          
+          # This connects the Deployment to the Secret created by ExternalSecrets
+          env:
+            {{- if .Values.secrets.enabled }}
+            {{- range $key, $val := .Values.secrets.vaultMappings }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  # This matches the target name in external-secret.yaml
+                  name: {{ include "python-app.fullname" $ }}-env
+                  key: {{ $key }}
+            {{- end }}
+            {{- end }}

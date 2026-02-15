@@ -1,24 +1,20 @@
 apiVersion: v1
 kind: Service
 metadata:
-  # This names the service based on release (e.g., payment-service)
   name: {{ .Release.Name }}
   labels:
     app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  # This reads "NodePort" or "ClusterIP" from values.yaml
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      # targetPort MUST match the port inside your app.py (usually 80)
-      targetPort: 80
+      # UPDATED: Read from values.yaml instead of hardcoding 80
+      targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
       name: http
-      # This block adds the nodePort (30007) only if you defined it in values.yaml
       {{- if .Values.service.nodePort }}
       nodePort: {{ .Values.service.nodePort }}
       {{- end }}
   selector:
-    # CRITICAL: These must match the labels in your deployment.yaml
     app: {{ .Release.Name }}

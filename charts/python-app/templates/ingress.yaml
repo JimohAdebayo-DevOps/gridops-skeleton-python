@@ -1,0 +1,41 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "python-app.fullname" . -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "python-app.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  
+  # 1. TLS BLOCK (The Lock)
+  # This automatically creates a secret named "{{ release-name }}-tls"
+  tls:
+    - hosts:
+      {{- range .Values.ingress.hosts }}
+        - {{ .host | quote }}
+      {{- end }}
+      secretName: {{ $fullName }}-tls
+
+  # 2. RULES BLOCK (The Routing)
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}

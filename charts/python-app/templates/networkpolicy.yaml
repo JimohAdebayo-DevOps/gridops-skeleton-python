@@ -1,0 +1,58 @@
+{{- if .Values.networkPolicy.enabled }}
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ include "python-app.fullname" . }}-deny-lateral
+  labels:
+    {{- include "python-app.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "python-app.selectorLabels" . | nindent 6 }}
+  
+  # 1. TO ISOLATE THE POD (Default Deny)
+  policyTypes:
+    - Ingress
+    - Egress
+
+  # 2. ALLOW INCOMING (Ingress)
+  ingress:
+    # Allow traffic from the Ingress Controller (Nginx)
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: {{ .Values.service.targetPort }}
+          protocol: TCP
+    
+    # Allow traffic from Prometheus (Monitoring)
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: {{ .Values.service.targetPort }}
+          protocol: TCP
+
+  # 3. ALLOW OUTGOING (Egress)
+  egress:
+    # Allow DNS Resolution (Vital for internet access)
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    
+    # Allow Access to the Internet (e.g., pip install, external APIs)
+    - to:
+      - ipBlock:
+          cidr: 0.0.0.0/0
+          except:
+            - 10.0.0.0/8      # Block access to internal private IPs (Cluster Network)
+            - 192.168.0.0/16  # Block access to Home LAN
+{{- end }}

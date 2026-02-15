@@ -1,10 +1,121 @@
 replicaCount: 1
 
 image:
-  repository: jimoh1990/payment-service
+  repository: jimoh1990/gridops-skeleton
   pullPolicy: IfNotPresent
-  tag: "v10"
+  tag: "latest"
 
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# ==========================================================
+# 2. SERVICE CONFIG (For service.yaml)
+# ==========================================================
 service:
-  type: NodePort       # Change from ClusterIP to NodePort
+  type: ClusterIP
   port: 80
+  # Matches the Django/Flask default port in container
+  targetPort: 8000
+
+# ==========================================================
+# 3. INGRESS CONFIG (For ingress.yaml)
+# ==========================================================
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-cloudflare
+    # 3. Security Hardening (Force HTTPS)
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # 4. Increase buffer size (Prevents 502 errors on large headers/OIDC)
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+   - secretName: chart-example-tls
+     hosts:
+       - chart-example.local
+
+# ==========================================================
+# 4. RESOURCE LIMITS
+# ==========================================================
+resources: 
+  limits:
+    cpu: 250 
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+# ==========================================================
+# 5. SECRET MANAGEMENT (The NEW Section)
+# ==========================================================
+# This drives the new 'external-secret.yaml' template.
+# By default, it is DISABLED so the skeleton remains "clean".
+secrets:
+  enabled: false
+  
+  # The name of the Global ClusterSecretStore we created
+  storeName: "vault-backend"
+  
+  # Developers will fill this in their own repo when they need secrets
+  # Example override:
+  # vaultMappings: 
+  #   DB_PASSWORD:
+  #     path: "secret/data/my-app"
+  #     key: "password"
+  vaultMappings: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# ==========================================================
+# 6. TENANCY & SECURITY
+# ==========================================================
+
+# 1. RBAC LIMITS
+serviceAccount:
+  create: true
+  # Default to FALSE. Most web apps don't need to talk to the K8s API.
+  # This prevents a hacker from using 'kubectl' if they break in.
+  automountToken: false 
+  annotations: {}
+
+# 2. NETWORK POLICIES (The Firewall)
+networkPolicy:
+  enabled: true  # Enable by default for Production Reality!
+  name: ""
