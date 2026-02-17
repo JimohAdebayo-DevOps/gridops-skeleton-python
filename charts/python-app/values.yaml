@@ -1,3 +1,6 @@
+# ==========================================================
+# 1. STANDARD DEPLOYMENT CONFIG
+# ==========================================================
 replicaCount: 1
 
 image:
@@ -9,8 +12,13 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+# ==========================================================
+# 2. SERVICE ACCOUNT & SECURITY
+# ==========================================================
 serviceAccount:
   create: true
+  # Security: Prevent the app from using kubectl
+  automountToken: false
   annotations: {}
   name: ""
 
@@ -28,7 +36,7 @@ securityContext: {}
   # runAsUser: 1000
 
 # ==========================================================
-# 2. SERVICE CONFIG (For service.yaml)
+# 3. SERVICE CONFIG (Internal Ports)
 # ==========================================================
 service:
   type: ClusterIP
@@ -37,36 +45,39 @@ service:
   targetPort: 8000
 
 # ==========================================================
-# 3. INGRESS CONFIG (For ingress.yaml)
+# 4. INGRESS CONFIG (External Access)
 # ==========================================================
 ingress:
-  enabled: false
+  enabled: true
   className: "nginx"
-  annotations: {}
+  
+  annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-cloudflare
-    # 3. Security Hardening (Force HTTPS)
+    # Security Hardening (Force HTTPS)
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    
-    # 4. Increase buffer size (Prevents 502 errors on large headers/OIDC)
+    # Prevent 502 errors on large OIDC headers
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+
   hosts:
-    - host: chart-example.local
+    # This to be updated to the actual domain (e.g., fantastic-app.sikiru.co.uk)
+    - host: fantastic-app.sikiru.co.uk
       paths:
         - path: /
-          pathType: ImplementationSpecific
+          pathType: Prefix
   tls:
-   - secretName: chart-example-tls
+   - secretName: fantastic-app-tls
      hosts:
-       - chart-example.local
+       - fantastic-app.sikiru.co.uk
 
 # ==========================================================
-# 4. RESOURCE LIMITS
+# 5. RESOURCE LIMITS (The Budget)
 # ==========================================================
 resources: 
   limits:
-    cpu: 250 
+    # FIXED: Added 'm' for millicores (250m = 0.25 CPU)
+    cpu: 250m
     memory: 512Mi
   requests:
     cpu: 100m
@@ -79,23 +90,22 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
 
 # ==========================================================
-# 5. SECRET MANAGEMENT (The NEW Section)
+# 6. SECRET MANAGEMENT (Vault Integration)
 # ==========================================================
-# This drives the new 'external-secret.yaml' template.
-# By default, it is DISABLED so the skeleton remains "clean".
 secrets:
+  # Toggle to true if added secrets below
   enabled: false
   
-  # The name of the Global ClusterSecretStore we created
   storeName: "vault-backend"
   
-  # Developers will fill this in their own repo when they need secrets
-  # Example override:
-  # vaultMappings: 
-  #   DB_PASSWORD:
-  #     path: "secret/data/my-app"
-  #     key: "password"
+  # FIXED: Use empty braces {} ONLY if the list is empty.
+  # If secrets is added,braces to be removed!
   vaultMappings: {}
+  # Example Usage:
+  # vaultMappings:
+  #   MY_PASSWORD:
+  #     path: "secret/data/fantastic-app"
+  #     key: "password"
 
 nodeSelector: {}
 
@@ -104,18 +114,9 @@ tolerations: []
 affinity: {}
 
 # ==========================================================
-# 6. TENANCY & SECURITY
+# 7. TENANCY (Firewall)
 # ==========================================================
-
-# 1. RBAC LIMITS
-serviceAccount:
-  create: true
-  # Default to FALSE. Most web apps don't need to talk to the K8s API.
-  # This prevents a hacker from using 'kubectl' if they break in.
-  automountToken: false 
-  annotations: {}
-
-# 2. NETWORK POLICIES (The Firewall)
 networkPolicy:
-  enabled: false  # Enable by default for Production Reality!
+  # Toggle to true to isolate this app namespace
+  enabled: false
   name: ""
