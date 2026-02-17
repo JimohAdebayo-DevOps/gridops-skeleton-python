@@ -117,5 +117,5 @@ serviceAccount:
 
 # 2. NETWORK POLICIES (The Firewall)
 networkPolicy:
-  enabled: true  # Enable by default for Production Reality!
+  enabled: false  # Enable by default for Production Reality!
   name: ""
