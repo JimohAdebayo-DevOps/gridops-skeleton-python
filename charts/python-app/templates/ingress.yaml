@@ -12,15 +12,19 @@ metadata:
   {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
-  
+
   # 1. TLS BLOCK (The Lock)
-  # This automatically creates a secret named "{{ release-name }}-tls"
+  # This now loops through the explicit 'tls' list in the values.yaml
+  {{- if .Values.ingress.tls }}
   tls:
+    {{- range .Values.ingress.tls }}
     - hosts:
-      {{- range .Values.ingress.hosts }}
-        - {{ .host | quote }}
+      {{- range .hosts }}
+        - {{ . | quote }}
       {{- end }}
-      secretName: {{ $fullName }}-tls
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
 
   # 2. RULES BLOCK (The Routing)
   rules:
@@ -30,7 +34,8 @@ spec:
         paths:
           {{- range .paths }}
           - path: {{ .path }}
-            pathType: {{ .pathType }}
+            # Use 'ImplementationSpecific' or 'Prefix' based on input, default to Prefix
+            pathType: {{ .pathType | default "Prefix" }}
             backend:
               service:
                 name: {{ $fullName }}
