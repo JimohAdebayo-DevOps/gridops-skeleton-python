@@ -4,9 +4,9 @@
 replicaCount: 1
 
 image:
-  repository: jimoh1990/fantastic-app-source
+  repository: jimoh1990/gridops-skeleton-python
   pullPolicy: IfNotPresent
-  tag: "v3"
+  tag: "v9"
 
 imagePullSecrets: []
 nameOverride: ""
