@@ -4,13 +4,13 @@
 replicaCount: 1
 
 image:
-  repository: jimoh1990/gridops-skeleton-python
+  repository: jimoh1990/fantastic-app-source
   pullPolicy: IfNotPresent
-  tag: "v6"
+  tag: "v3"
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: ""
+fullnameOverride: "fantastic-app"
 
 # ==========================================================
 # 2. SERVICE ACCOUNT & SECURITY
@@ -42,7 +42,7 @@ service:
   type: ClusterIP
   port: 80
   # Matches the Django/Flask default port in container
-  targetPort: 8000
+  #targetPort: 8000
 
 # ==========================================================
 # 4. INGRESS CONFIG (External Access)
@@ -55,8 +55,8 @@ ingress:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-cloudflare
     # Security Hardening (Force HTTPS)
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
     # Prevent 502 errors on large OIDC headers
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
 
@@ -94,18 +94,16 @@ autoscaling:
 # ==========================================================
 secrets:
   # Toggle to true if added secrets below
-  enabled: false
+  enabled: true
   
   storeName: "vault-backend"
   
   # FIXED: Use empty braces {} ONLY if the list is empty.
   # If secrets is added,braces to be removed!
-  vaultMappings: {}
-  # Example Usage:
-  # vaultMappings:
-  #   MY_PASSWORD:
-  #     path: "secret/data/fantastic-app"
-  #     key: "password"
+  vaultMappings:            # <--- No {} brackets here!
+    MY_TEST_SECRET:
+      path: "secret/data/fantastic-app"
+      key: "my_password"
 
 nodeSelector: {}
 
@@ -118,5 +116,5 @@ affinity: {}
 # ==========================================================
 networkPolicy:
   # Toggle to true to isolate this app namespace
-  enabled: false
+  enabled: true
   name: ""
