@@ -1,0 +1,120 @@
+# ==========================================================
+# 1. STANDARD DEPLOYMENT CONFIG
+# ==========================================================
+replicaCount: 1
+
+image:
+  repository: jimoh1990/fantastic-app-source
+  pullPolicy: IfNotPresent
+  tag: "v3"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "fantastic-app"
+
+# ==========================================================
+# 2. SERVICE ACCOUNT & SECURITY
+# ==========================================================
+serviceAccount:
+  create: true
+  # Security: Prevent the app from using kubectl
+  automountToken: false
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# ==========================================================
+# 3. SERVICE CONFIG (Internal Ports)
+# ==========================================================
+service:
+  type: ClusterIP
+  port: 80
+  # Matches the Django/Flask default port in container
+  #targetPort: 8000
+
+# ==========================================================
+# 4. INGRESS CONFIG (External Access)
+# ==========================================================
+ingress:
+  enabled: true
+  className: "nginx"
+  
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-cloudflare
+    # Security Hardening (Force HTTPS)
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    # Prevent 502 errors on large OIDC headers
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+
+  hosts:
+    # This to be updated to the actual domain (e.g., fantastic-app.sikiru.co.uk)
+    - host: fantastic-app.sikiru.co.uk
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+   - secretName: fantastic-app-tls
+     hosts:
+       - fantastic-app.sikiru.co.uk
+
+# ==========================================================
+# 5. RESOURCE LIMITS (The Budget)
+# ==========================================================
+resources: 
+  limits:
+    # FIXED: Added 'm' for millicores (250m = 0.25 CPU)
+    cpu: 250m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+# ==========================================================
+# 6. SECRET MANAGEMENT (Vault Integration)
+# ==========================================================
+secrets:
+  # Toggle to true if added secrets below
+  enabled: true
+  
+  storeName: "vault-backend"
+  
+  # FIXED: Use empty braces {} ONLY if the list is empty.
+  # If secrets is added,braces to be removed!
+  vaultMappings:            # <--- No {} brackets here!
+    MY_TEST_SECRET:
+      path: "secret/data/fantastic-app"
+      key: "my_password"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# ==========================================================
+# 7. TENANCY (Firewall)
+# ==========================================================
+networkPolicy:
+  # Toggle to true to isolate this app namespace
+  enabled: true
+  name: ""
