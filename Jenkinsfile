@@ -72,7 +72,7 @@ pipeline {
                             sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' k8s/values.yaml
                             
                             # 3. Commit and Push Back
-                            git add charts/python-app/values.yaml
+                            git add k8s/values.yaml
                             git commit -m "ci: update image to ${REPO_NAME}:${IMAGE_TAG} [skip ci]"
                             git push https://${GIT_USER}:${GIT_TOKEN}@github.com/JimohAdebayo-DevOps/${REPO_NAME}.git HEAD:main
                         """
