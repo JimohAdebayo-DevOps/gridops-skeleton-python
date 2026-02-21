@@ -69,7 +69,7 @@ pipeline {
                             sed -i 's|repository: .*|repository: ${DOCKER_USER}/${REPO_NAME}|' k8s/values.yaml
                             
                             # 2. Update the Image Tag (e.g., v1 -> v5)
-                            sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' charts/python-app/values.yaml
+                            sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' k8s/values.yaml
                             
                             # 3. Commit and Push Back
                             git add charts/python-app/values.yaml
