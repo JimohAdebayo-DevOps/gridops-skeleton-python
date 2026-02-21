@@ -66,7 +66,7 @@ pipeline {
                             
                             # --- THE FIX IS HERE ---
                             # 1. Update the Repository Name (e.g., jimoh1990/payment-service -> jimoh1990/inventory-api-source)
-                            sed -i 's|repository: .*|repository: ${DOCKER_USER}/${REPO_NAME}|' charts/python-app/values.yaml
+                            sed -i 's|repository: .*|repository: ${DOCKER_USER}/${REPO_NAME}|' k8s/values.yaml
                             
                             # 2. Update the Image Tag (e.g., v1 -> v5)
                             sed -i 's/tag: .*/tag: "${IMAGE_TAG}"/' charts/python-app/values.yaml
