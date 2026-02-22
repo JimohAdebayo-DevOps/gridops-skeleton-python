@@ -23,17 +23,17 @@ spec:
               protocol: TCP
           livenessProbe:
           # SAFE OPTION: Just check if the port is open
-          tcpSocket:
-            port: http
-          initialDelaySeconds: 15
-          periodSeconds: 20
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
         
-        readinessProbe:
+          readinessProbe:
           # SAFE OPTION: Just check if the port is open
-          tcpSocket:
-            port: http
-          initialDelaySeconds: 5
-          periodSeconds: 10
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
           
           # This connects the Deployment to the Secret created by ExternalSecrets
           env:
