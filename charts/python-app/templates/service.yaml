@@ -8,9 +8,13 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      # UPDATED: Read from values.yaml instead of hardcoding 80
-      targetPort: {{ .Values.service.targetPort }}
+    # Safely fallback to port 80 if the developer omits it from values.yaml
+    - port: {{ .Values.service.port | default 80 }}
+      
+      # ARCHITECTURAL FIX: Route to the named port 'http' on the container, 
+      # decoupling the Service from hardcoded application ports.
+      targetPort: http
+      
       protocol: TCP
       name: http
       {{- if .Values.service.nodePort }}

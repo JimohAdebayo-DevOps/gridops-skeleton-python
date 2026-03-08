@@ -26,7 +26,7 @@ spec:
               memory: {{ .Values.resources.limits.memory | default "256Mi" }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: {{ .Values.service.targetPort | default 80 }}
               protocol: TCP
           livenessProbe:
           # SAFE OPTION: Just check if the port is open
