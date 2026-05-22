@@ -6,7 +6,7 @@ replicaCount: 1
 image:
   repository: jimoh1990/gridops-skeleton-python
   pullPolicy: IfNotPresent
-  tag: "v32"
+  tag: "v33"
 
 imagePullSecrets: []
 nameOverride: ""
